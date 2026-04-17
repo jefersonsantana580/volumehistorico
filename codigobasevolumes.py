@@ -158,9 +158,6 @@ st.caption("Valor exibido: soma da coluna Total")
 st.dataframe(tabela, use_container_width=True, hide_index=True)
 
 
-
-
-
 # Mini gráfico abaixo da tabela
 st.subheader("Mini gráfico de linha")
 st.caption("Resumo do total por ciclo com base na tabela exibida acima")
