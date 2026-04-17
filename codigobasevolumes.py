@@ -155,70 +155,9 @@ tabela = tabela.sort_values(["SITE", "Product DR"]).reset_index(drop=True)
 
 st.subheader("Tabela consolidada")
 st.caption("Valor exibido: soma da coluna Total")
+st.dataframe(tabela, use_container_width=True, hide_index=True)
 
-tabela_exibicao = tabela.copy()
 
-# Garantir números inteiros nas colunas dos ciclos
-for ciclo in ORDEM_CICLOS:
-    tabela_exibicao[ciclo] = pd.to_numeric(
-        tabela_exibicao[ciclo], errors="coerce"
-    ).fillna(0).astype(int)
-
-gb = GridOptionsBuilder.from_dataframe(tabela_exibicao)
-
-# Configuração padrão
-gb.configure_default_column(
-    resizable=True,
-    sortable=True,
-    filter=True
-)
-
-# Colunas fixas à esquerda + quebra de linha dentro da célula
-gb.configure_column(
-    "SITE",
-    pinned="left",
-    width=160,
-    wrapText=True,
-    autoHeight=True,
-    cellStyle={
-        "whiteSpace": "normal",
-        "lineHeight": "1.2"
-    }
-)
-
-gb.configure_column(
-    "Product DR",
-    pinned="left",
-    width=110,
-    wrapText=True,
-    autoHeight=True,
-    cellStyle={
-        "whiteSpace": "normal",
-        "lineHeight": "1.2"
-    }
-)
-
-# Colunas numéricas
-for ciclo in ORDEM_CICLOS:
-    gb.configure_column(
-        ciclo,
-        width=90,
-        type=["numericColumn"],
-        cellStyle={"textAlign": "center"}
-    )
-
-grid_options = gb.build()
-grid_options["suppressMovableColumns"] = True
-grid_options["ensureDomOrder"] = True
-
-AgGrid(
-    tabela_exibicao,
-    gridOptions=grid_options,
-    height=420,
-    theme="streamlit",
-    fit_columns_on_grid_load=False,
-    allow_unsafe_jscode=True
-)
 
 
 
