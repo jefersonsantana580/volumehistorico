@@ -11,7 +11,7 @@ st.title("📊 Visão de Volumes por Site e Product DR")
 
 # Ordem visual das colunas conforme o layout desejado
 ORDEM_CICLOS = [
-    "0+0 Bgt", "00+12", "01+11", "02+10", "03+9", "04+8",
+    "0+0 Bgt", "0+12", "01+11", "02+10", "03+9", "04+8",
     "05+7", "06+6", "07+5", "08+4", "09+3", "10+2", "11+1", "12+0"
 ]
 
