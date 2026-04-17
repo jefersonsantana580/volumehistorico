@@ -119,6 +119,20 @@ df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "BRAND", brand_sel)
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
 
+
+df_filtrado = df.copy()
+df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
+df_filtrado = aplicar_filtro_opcional(df_filtrado, "BRAND", brand_sel)
+df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
+
+# Remover Product DR = PC e CO para o site GENERAL RODRIGUEZ
+df_filtrado = df_filtrado[
+    ~(
+        (df_filtrado["SITE"] == "GENERAL RODRIGUEZ") &
+        (df_filtrado["Product DR"].isin(["PC", "CO"]))
+    )
+]
+
 # =========================
 # Montagem da tabela
 # Linhas: SITE + Product DR
