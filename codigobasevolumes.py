@@ -114,24 +114,29 @@ with col2:
 with col3:
     market_sel = st.selectbox("PRODUCT MARKET", markets)
 
-df_filtrado = df.copy()
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "BRAND", brand_sel)
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
-
 
 df_filtrado = df.copy()
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "BRAND", brand_sel)
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
 
-# Remover Product DR = PC e CO para o site GENERAL RODRIGUEZ
+# Padronização para evitar problema com espaço/maiúsculas
+df_filtrado["SITE"] = df_filtrado["SITE"].astype(str).str.strip().str.upper()
+df_filtrado["Product DR"] = df_filtrado["Product DR"].astype(str).str.strip().str.upper()
+
+# Regras de exclusão:
+# 1) remover PC de qualquer filial
+# 2) remover CO somente de GENERAL RODRIGUEZ
 df_filtrado = df_filtrado[
     ~(
-        (df_filtrado["SITE"] == "GENERAL RODRIGUEZ") &
-        (df_filtrado["Product DR"].isin(["PC", "CO"]))
+        (df_filtrado["Product DR"] == "PC") |
+        (
+            (df_filtrado["SITE"] == "GENERAL RODRIGUEZ") &
+            (df_filtrado["Product DR"] == "CO")
+        )
     )
 ]
+
 
 # =========================
 # Montagem da tabela
