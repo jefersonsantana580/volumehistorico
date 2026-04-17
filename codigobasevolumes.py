@@ -1,6 +1,29 @@
 import streamlit as st
 import pandas as pd
 
+
+from pathlib import Path
+import zipfile
+
+ARQUIVO_EXCEL = "dados/base_volume_sites.xlsx"
+
+arquivo = Path(ARQUIVO_EXCEL)
+
+st.write("Arquivo encontrado?", arquivo.exists())
+if arquivo.exists():
+    st.write("Tamanho (bytes):", arquivo.stat().st_size)
+
+    try:
+        with zipfile.ZipFile(arquivo, "r") as zf:
+            st.write("Arquivo .xlsx válido? Sim")
+    except zipfile.BadZipFile:
+        st.error("O arquivo encontrado NÃO é um .xlsx válido (conteúdo corrompido ou upload incorreto).")
+        st.stop()
+else:
+    st.error(f"Arquivo não encontrado em: {ARQUIVO_EXCEL}")
+    st.stop()
+
+
 st.set_page_config(
     page_title="Visão de Volumes",
     layout="wide"
