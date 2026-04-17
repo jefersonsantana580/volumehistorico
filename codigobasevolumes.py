@@ -181,38 +181,43 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 
 
 
+
 # Mini gráfico abaixo da tabela
 st.subheader("Mini gráfico de linha")
-st.caption("Resumo do total por ciclo com base na tabela exibida acima")
+st.caption("Uma linha para cada combinação de SITE e Product DR")
 
-serie_total = tabela[ORDEM_CICLOS].sum(axis=0)
-chart_df = pd.DataFrame({
-    "Ciclo": ORDEM_CICLOS,
-    "Total": [serie_total.get(c, 0) for c in ORDEM_CICLOS]
-}).set_index("Ciclo")
+tabela_plot = tabela.copy()
+tabela_plot["Série"] = (
+    tabela_plot["SITE"].astype(str) + " | " + tabela_plot["Product DR"].astype(str)
+)
 
-st.line_chart(chart_df, height=220, use_container_width=True)
+# Limite opcional para não poluir o gráfico
+mostrar_todas = st.checkbox("Mostrar todas as linhas no gráfico", value=False)
 
-with st.expander("Exibir linhas específicas no gráfico"):
-    tabela_plot = tabela.copy()
-    tabela_plot["Série"] = (
-        tabela_plot["SITE"].astype(str) + " | " + tabela_plot["Product DR"].astype(str)
-    )
-
+if mostrar_todas:
+    dados_grafico = tabela_plot.set_index("Série")[ORDEM_CICLOS].T
+    dados_grafico.index.name = "Ciclo"
+    st.line_chart(dados_grafico, height=320, use_container_width=True)
+else:
     opcoes = tabela_plot["Série"].tolist()
-    default = opcoes[:5]
+    default = opcoes[: min(8, len(opcoes))]
 
     selecionadas = st.multiselect(
-        "Escolha até 5 linhas para comparar",
+        "Escolha as linhas que deseja visualizar no gráfico",
         options=opcoes,
-        default=default[: min(5, len(default))]
+        default=default
     )
 
     if selecionadas:
-        dados_grafico = tabela_plot[tabela_plot["Série"].isin(selecionadas)].copy()
-        dados_grafico = dados_grafico.set_index("Série")[ORDEM_CICLOS].T
+        dados_grafico = (
+            tabela_plot[tabela_plot["Série"].isin(selecionadas)]
+            .set_index("Série")[ORDEM_CICLOS]
+            .T
+        )
         dados_grafico.index.name = "Ciclo"
-        st.line_chart(dados_grafico, height=260, use_container_width=True)
+        st.line_chart(dados_grafico, height=320, use_container_width=True)
+    else:
+        st.info("Selecione pelo menos uma linha para exibir no gráfico.")
 
 # =========================
 # Resumo rápido
