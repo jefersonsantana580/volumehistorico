@@ -12,8 +12,8 @@ st.title("📊 Visão de Volumes por Site e Product DR")
 
 # Ordem visual das colunas conforme o layout desejado
 ORDEM_CICLOS = [
-    "0+0 Bgt", "0+12", "01+11", "02+10", "03+9", "04+8",
-    "05+7", "06+6", "07+5", "08+4", "09+3", "10+2", "11+1", "12+0"
+    "0+0 Bgt", "0+12", "01+11", "02+10", "03+09", "04+08",
+    "05+07", "06+06", "07+05", "08+04", "09+03", "10+02", "11+01", "12+0"
 ]
 
 ARQUIVO_EXCEL = "dados/base_volume_sites.xlsx"
