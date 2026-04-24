@@ -181,45 +181,6 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 
 
 
-# Mini gráfico abaixo da tabela
-st.subheader("Mini gráfico de linha")
-st.caption("Uma linha para cada Product DR, consolidando todos os sites")
-
-grafico_produto = (
-    tabela.groupby("Product DR")[ORDEM_CICLOS]
-    .sum()
-    .T
-)
-
-grafico_produto.index.name = "Ciclo"
-
-mostrar_todos_produtos = st.checkbox(
-    "Mostrar todos os produtos no gráfico",
-    value=True
-)
-
-if mostrar_todos_produtos:
-    st.line_chart(grafico_produto, height=320, use_container_width=True)
-else:
-    produtos = grafico_produto.columns.tolist()
-    default_produtos = produtos[: min(8, len(produtos))]
-
-    produtos_selecionados = st.multiselect(
-        "Escolha os produtos que deseja visualizar",
-        options=produtos,
-        default=default_produtos
-    )
-
-    if produtos_selecionados:
-        st.line_chart(
-            grafico_produto[produtos_selecionados],
-            height=320,
-            use_container_width=True
-        )
-    else:
-        st.info("Selecione pelo menos um produto para exibir no gráfico.")
-
-
 # =========================
 # Resumo rápido
 # =========================
