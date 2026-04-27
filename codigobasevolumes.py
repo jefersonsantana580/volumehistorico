@@ -262,7 +262,7 @@ else:
                 df_plot = df_site.set_index("Product DR")[ORDEM_CICLOS].T
 
                 # remove ciclos sem volume total
-                df_plot = df_plot.loc[df_plot.sum(axis=1) > 0]
+               
 
                 if df_plot.empty:
                     st.info(f"{site}: sem volume para exibir.")
