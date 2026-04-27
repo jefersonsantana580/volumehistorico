@@ -315,13 +315,14 @@ else:
                         showgrid=False,
                         tickangle=0
                     ),
+                    
                     yaxis=dict(
                         title=dict(text="", font=dict(color="black", size=12)),
                         tickfont=dict(color="black", size=11),
                         showticklabels=False,
-                        showgrid=True,
-                        gridcolor="rgba(0,0,0,0.10)",
+                        showgrid=False,
                         zeroline=False
+
                     ),
                     legend=dict(
                         title=dict(text="Product DR", font=dict(color="black", size=11)),
