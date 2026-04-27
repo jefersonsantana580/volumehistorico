@@ -228,6 +228,7 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 # Gráficos por filial
 # =========================
 
+
 st.divider()
 st.subheader("📈 Gráficos por filial")
 st.caption("Cada gráfico mostra os volumes por ciclo e produto. Ciclos sem volume não são exibidos.")
@@ -249,10 +250,10 @@ sites_unicos = sorted(tabela["SITE"].dropna().unique().tolist())
 if not sites_unicos:
     st.info("Nenhuma filial encontrada para exibir gráficos.")
 else:
-    # até 5 gráficos (1 por filial)
+    # até 5 gráficos
     sites_graficos = sites_unicos[:5]
 
-    # organiza 2 gráficos por linha
+    # 2 gráficos por linha
     for i in range(0, len(sites_graficos), 2):
         cols = st.columns(2)
 
@@ -270,73 +271,77 @@ else:
                     st.info(f"{site}: sem volume para exibir.")
                     continue
 
-                # ordena os produtos pelo total (maior embaixo da pilha)
+                # ordena os produtos pelo total
                 ordem_produtos = df_plot.sum(axis=0).sort_values(ascending=False).index.tolist()
                 df_plot = df_plot[ordem_produtos]
 
-                fig, ax = plt.subplots(figsize=(10, 4.8))
+                fig = go.Figure()
 
-                # base da pilha
-                bottom = pd.Series(0, index=df_plot.index, dtype=float)
-
+                # adiciona cada Product DR como uma série empilhada
                 for produto in df_plot.columns:
                     valores = df_plot[produto].fillna(0)
-                    cor = cores_produtos.get(produto, "#999999")
 
-                    ax.bar(
-                        df_plot.index,
-                        valores,
-                        bottom=bottom,
-                        label=produto,
-                        color=cor,
-                        edgecolor="white",
-                        linewidth=0.7
+                    fig.add_trace(
+                        go.Bar(
+                            x=df_plot.index.tolist(),
+                            y=valores.tolist(),
+                            name=produto,
+                            marker_color=cores_produtos.get(produto, "#999999"),
+                            text=[f"{int(v):,}".replace(",", ".") if v > 0 else "" for v in valores],
+                            textposition="inside",
+                            insidetextanchor="middle",
+                            hovertemplate=(
+                                f"<b>{site}</b><br>"
+                                "Ciclo: %{x}<br>"
+                                f"Produto: {produto}<br>"
+                                "Volume: %{y:,.0f}<extra></extra>"
+                            )
+                        )
                     )
-
-                    bottom = bottom + valores
 
                 # total no topo da pilha
                 totais = df_plot.sum(axis=1)
-                offset = max(totais) * 0.015 if max(totais) > 0 else 1
 
-                for x, total in enumerate(totais):
-                    if total > 0:
-                        ax.text(
-                            x,
-                            total + offset,
-                            f"{int(total):,}".replace(",", "."),
-                            ha="center",
-                            va="bottom",
-                            fontsize=9,
-                            fontweight="bold",
-                            color="black"
-                        )
-
-                ax.set_title(f"{site}", fontsize=12, fontweight="bold")
-                ax.set_xlabel("Nº CICLO")
-                ax.set_ylabel("Volume")
-                ax.tick_params(axis="x", rotation=0)
-
-                # grade leve
-                ax.grid(axis="y", linestyle="--", alpha=0.25)
-
-                # remove bordas desnecessárias
-                ax.spines["top"].set_visible(False)
-                ax.spines["right"].set_visible(False)
-
-                # legenda mais limpa
-                ax.legend(
-                    title="Product DR",
-                    loc="upper left",
-                    bbox_to_anchor=(1.01, 1),
-                    frameon=False,
-                    fontsize=9,
-                    title_fontsize=9
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_plot.index.tolist(),
+                        y=totais.tolist(),
+                        mode="text",
+                        text=[f"{int(v):,}".replace(",", ".") if v > 0 else "" for v in totais],
+                        textposition="top center",
+                        showlegend=False,
+                        hoverinfo="skip"
+                    )
                 )
 
-                plt.tight_layout()
-                st.pyplot(fig, use_container_width=True)
-                plt.close(fig)
+                fig.update_layout(
+                    title={
+                        "text": f"{site}",
+                        "x": 0.02,
+                        "xanchor": "left"
+                    },
+                    barmode="stack",
+                    height=420,
+                    margin=dict(l=40, r=20, t=50, b=40),
+                    xaxis_title="Nº CICLO",
+                    yaxis_title="Volume",
+                    legend_title="Product DR",
+                    plot_bgcolor="white",
+                    paper_bgcolor="white"
+                )
+
+                fig.update_xaxes(
+                    showgrid=False,
+                    tickangle=0
+                )
+
+                fig.update_yaxes(
+                    showgrid=True,
+                    gridcolor="rgba(0,0,0,0.08)",
+                    zeroline=False
+                )
+
+                st.plotly_chart(fig, use_container_width=True
 
 
 
