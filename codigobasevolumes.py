@@ -152,13 +152,24 @@ df = df[df["Tipo Base"] == "F_RESPONSE"].copy()
 # =========================
 # Filtros da tela
 # =========================
+
 st.subheader("Filtros")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 anos = ["Todos"] + sorted(df["ANO"].dropna().unique().tolist())
 brands = ["Todos"] + sorted(df["BRAND"].dropna().unique().tolist())
 markets = ["Todos"] + sorted(df["PRODUCT MARKET"].dropna().unique().tolist())
+
+product_drs = ["Todos"] + sorted(
+    df["Product DR"]
+    .dropna()
+    .astype(str)
+    .str.strip()
+    .str.upper()
+    .unique()
+    .tolist()
+)
 
 with col1:
     ano_sel = st.selectbox("ANO", anos)
@@ -169,6 +180,9 @@ with col2:
 with col3:
     market_sel = st.selectbox("PRODUCT MARKET", markets)
 
+with col4:
+    product_dr_sel = st.selectbox("PRODUCT DR", product_drs)
+
 
 df_filtrado = df.copy()
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
@@ -177,6 +191,8 @@ df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
 
 df_filtrado["SITE"] = df_filtrado["SITE"].astype(str).str.strip().str.upper()
 df_filtrado["Product DR"] = df_filtrado["Product DR"].astype(str).str.strip().str.upper()
+
+df_filtrado = aplicar_filtro_opcional(df_filtrado, "Product DR", product_dr_sel)
 
 df_filtrado = df_filtrado[
     ~(
@@ -187,6 +203,7 @@ df_filtrado = df_filtrado[
         )
     )
 ]
+
 
 
 # =========================
