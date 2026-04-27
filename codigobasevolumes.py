@@ -288,6 +288,7 @@ else:
                             marker_color=cores_produtos.get(produto, "#666666"),
                             text=[f"{int(v):,}".replace(",", ".") if v > 0 else "" for v in valores],
                             textposition="inside",
+                            insidetextanchor="middle",
                             textfont=dict(color="white", size=10),
                             hovertemplate=(
                                 f"<b>{site}</b><br>"
@@ -298,22 +299,6 @@ else:
                         )
                     )
 
-                # total no topo
-                totais = df_plot.sum(axis=1)
-
-                fig.add_trace(
-                    go.Scatter(
-                        x=df_plot.index.tolist(),
-                        y=totais.tolist(),
-                        mode="text",
-                        text=[f"{int(v):,}".replace(",", ".") if v > 0 else "" for v in totais],
-                        textposition="top center",
-                        textfont=dict(color="black", size=11),
-                        showlegend=False,
-                        hoverinfo="skip"
-                    )
-                )
-
                 fig.update_layout(
                     title=dict(
                         text=f"{site}",
@@ -322,7 +307,7 @@ else:
                         font=dict(color="black", size=18)
                     ),
                     barmode="stack",
-                    height=300,  # gráfico menor
+                    height=300,
                     margin=dict(l=20, r=20, t=45, b=30),
                     xaxis=dict(
                         title=dict(text="Nº CICLO", font=dict(color="black", size=12)),
@@ -333,7 +318,7 @@ else:
                     yaxis=dict(
                         title=dict(text="", font=dict(color="black", size=12)),
                         tickfont=dict(color="black", size=11),
-                        showticklabels=False,   # remove os números do eixo esquerdo
+                        showticklabels=False,
                         showgrid=True,
                         gridcolor="rgba(0,0,0,0.10)",
                         zeroline=False
@@ -353,6 +338,7 @@ else:
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
+
 
 
 # =========================
