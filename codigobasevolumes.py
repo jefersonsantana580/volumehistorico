@@ -17,7 +17,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Visão de Volumes por Site e Product DR")
+st.title("📊 Painel Gerencial de volumes via ciclo mensal ")
 
 # Ordem visual das colunas
 ORDEM_CICLOS = [
