@@ -400,17 +400,3 @@ with st.popover("📥 Baixar dados"):
         mime="application/pdf",
         use_container_width=True
     )
-
-
-# =========================
-# Resumo
-# =========================
-col_a, col_b = st.columns(2)
-
-with col_a:
-    st.metric("Linhas exibidas", len(tabela))
-
-with col_b:
-    soma_geral = tabela[ORDEM_CICLOS].sum().sum()
-    st.metric("Soma geral", f"{soma_geral:,.0f}".replace(",", "."))
-
