@@ -237,9 +237,9 @@ st.caption("Cada gráfico mostra os volumes por ciclo e produto. Ciclos sem volu
 cores_produtos = {
     "DF": "#1F77B4",      # azul forte
     "MOM": "#D62728",     # vermelho forte
-    "RIG": "#2CA02C",     # verde forte
+    "RIG": "#17BEC",     # verde forte
     "TA": "#9467BD",      # roxo forte
-    "PU": "#17BECF",      # ciano forte
+    "PU": "#2CA02C",      # ciano forte
     "CO": "#FF7F0E",      # laranja forte
     "CO PKD": "#8C564B"   # marrom forte
 }
