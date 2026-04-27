@@ -7,6 +7,7 @@ import io
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 
 # =========================
