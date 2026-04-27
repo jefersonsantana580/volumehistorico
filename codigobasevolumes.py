@@ -6,6 +6,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 import io
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
+import matplotlib.pyplot as plt
 
 
 # =========================
