@@ -233,7 +233,7 @@ st.divider()
 st.subheader("📈 Gráficos por filial")
 st.caption("Cada gráfico mostra os volumes por ciclo e produto. Ciclos sem volume não são exibidos.")
 
-# cores mais fortes
+# mesma cor para o mesmo Product DR em qualquer filial
 cores_produtos = {
     "DF": "#1F77B4",      # azul forte
     "MOM": "#D62728",     # vermelho forte
@@ -244,16 +244,13 @@ cores_produtos = {
     "CO PKD": "#8C564B"   # marrom forte
 }
 
-# lista de filiais da tabela consolidada
 sites_unicos = sorted(tabela["SITE"].dropna().unique().tolist())
 
 if not sites_unicos:
     st.info("Nenhuma filial encontrada para exibir gráficos.")
 else:
-    # até 5 gráficos
     sites_graficos = sites_unicos[:5]
 
-    # 2 gráficos por linha
     for i in range(0, len(sites_graficos), 2):
         cols = st.columns(2)
 
@@ -271,13 +268,15 @@ else:
                     st.info(f"{site}: sem volume para exibir.")
                     continue
 
-                # ordena os produtos pelo total
-                ordem_produtos = df_plot.sum(axis=0).sort_values(ascending=False).index.tolist()
-                df_plot = df_plot[ordem_produtos]
+                # ordem fixa dos produtos (mantém consistência visual)
+                ordem_fixa_produtos = ["DF", "MOM", "RIG", "TA", "PU", "CO", "CO PKD"]
+                produtos_existentes = [p for p in ordem_fixa_produtos if p in df_plot.columns]
+                outros_produtos = [p for p in df_plot.columns if p not in produtos_existentes]
+                df_plot = df_plot[produtos_existentes + outros_produtos]
 
                 fig = go.Figure()
 
-                # adiciona cada Product DR como uma série empilhada
+                # barras empilhadas por produto
                 for produto in df_plot.columns:
                     valores = df_plot[produto].fillna(0)
 
@@ -286,10 +285,10 @@ else:
                             x=df_plot.index.tolist(),
                             y=valores.tolist(),
                             name=produto,
-                            marker_color=cores_produtos.get(produto, "#999999"),
+                            marker_color=cores_produtos.get(produto, "#666666"),
                             text=[f"{int(v):,}".replace(",", ".") if v > 0 else "" for v in valores],
                             textposition="inside",
-                            insidetextanchor="middle",
+                            textfont=dict(color="white", size=10),
                             hovertemplate=(
                                 f"<b>{site}</b><br>"
                                 "Ciclo: %{x}<br>"
@@ -299,7 +298,7 @@ else:
                         )
                     )
 
-                # total no topo da pilha
+                # total no topo
                 totais = df_plot.sum(axis=1)
 
                 fig.add_trace(
@@ -309,40 +308,51 @@ else:
                         mode="text",
                         text=[f"{int(v):,}".replace(",", ".") if v > 0 else "" for v in totais],
                         textposition="top center",
+                        textfont=dict(color="black", size=11),
                         showlegend=False,
                         hoverinfo="skip"
                     )
                 )
 
                 fig.update_layout(
-                    title={
-                        "text": f"{site}",
-                        "x": 0.02,
-                        "xanchor": "left"
-                    },
+                    title=dict(
+                        text=f"{site}",
+                        x=0.02,
+                        xanchor="left",
+                        font=dict(color="black", size=18)
+                    ),
                     barmode="stack",
-                    height=420,
-                    margin=dict(l=40, r=20, t=50, b=40),
-                    xaxis_title="Nº CICLO",
-                    yaxis_title="Volume",
-                    legend_title="Product DR",
+                    height=300,  # gráfico menor
+                    margin=dict(l=20, r=20, t=45, b=30),
+                    xaxis=dict(
+                        title=dict(text="Nº CICLO", font=dict(color="black", size=12)),
+                        tickfont=dict(color="black", size=11),
+                        showgrid=False,
+                        tickangle=0
+                    ),
+                    yaxis=dict(
+                        title=dict(text="", font=dict(color="black", size=12)),
+                        tickfont=dict(color="black", size=11),
+                        showticklabels=False,   # remove os números do eixo esquerdo
+                        showgrid=True,
+                        gridcolor="rgba(0,0,0,0.10)",
+                        zeroline=False
+                    ),
+                    legend=dict(
+                        title=dict(text="Product DR", font=dict(color="black", size=11)),
+                        font=dict(color="black", size=10),
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    ),
+                    font=dict(color="black"),
                     plot_bgcolor="white",
                     paper_bgcolor="white"
                 )
 
-                fig.update_xaxes(
-                    showgrid=False,
-                    tickangle=0
-                )
-
-                fig.update_yaxes(
-                    showgrid=True,
-                    gridcolor="rgba(0,0,0,0.08)",
-                    zeroline=False
-                )
-
                 st.plotly_chart(fig, use_container_width=True)
-
 
 
 # =========================
