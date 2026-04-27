@@ -236,8 +236,8 @@ st.caption("Cada gráfico mostra os volumes por ciclo e produto. Ciclos sem volu
 # mesma cor para o mesmo Product DR em qualquer filial
 cores_produtos = {
     "DF": "#1F77B4",      # azul forte
-    "MOM": "#6F4C9B",     # vermelho forte
-    "RIG": "#17BECF",     # verde forte
+    "MOM": "#6DC8A0",     # vermelho forte
+    "RIG": "#6F4C9B",     # verde forte
     "TA": "#D62728",      # roxo forte
     "PU": "#2CA02C",      # ciano forte
     "CO": "#FF7F0E",      # laranja forte
