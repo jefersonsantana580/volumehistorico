@@ -78,6 +78,26 @@ def aplicar_filtro_opcional(df, coluna, valor):
     return df[df[coluna] == valor]
 
 
+def aplicar_filtro_multiplos(df, coluna, valores):
+    if not valores:
+        return df
+    return df[df[coluna].isin(valores)]
+
+
+def render_checkbox_filter(label, options, key_prefix):
+    selecionados = []
+
+    with st.popover(label, use_container_width=True):
+        st.caption(f"Selecione um ou mais itens de {label}")
+
+        for opt in options:
+            opt_str = str(opt)
+            if st.checkbox(opt_str, key=f"{key_prefix}_{opt_str}"):
+                selecionados.append(opt)
+
+    return selecionados
+
+
 # ===== Exportação =====
 def gerar_excel(df):
     output = io.BytesIO()
@@ -152,16 +172,14 @@ df = df[df["Tipo Base"] == "F_RESPONSE"].copy()
 # =========================
 # Filtros da tela
 # =========================
-
 st.subheader("Filtros")
 
 col1, col2, col3, col4 = st.columns(4)
 
-anos = ["Todos"] + sorted(df["ANO"].dropna().unique().tolist())
-brands = ["Todos"] + sorted(df["BRAND"].dropna().unique().tolist())
-markets = ["Todos"] + sorted(df["PRODUCT MARKET"].dropna().unique().tolist())
-
-product_drs = ["Todos"] + sorted(
+anos = sorted(df["ANO"].dropna().unique().tolist())
+brands = sorted(df["BRAND"].dropna().astype(str).str.strip().unique().tolist())
+markets = sorted(df["PRODUCT MARKET"].dropna().astype(str).str.strip().unique().tolist())
+product_drs = sorted(
     df["Product DR"]
     .dropna()
     .astype(str)
@@ -172,28 +190,33 @@ product_drs = ["Todos"] + sorted(
 )
 
 with col1:
-    ano_sel = st.selectbox("ANO", anos)
+    ano_sel = render_checkbox_filter("ANO", anos, "ano")
 
 with col2:
-    brand_sel = st.selectbox("BRAND", brands)
+    brand_sel = render_checkbox_filter("BRAND", brands, "brand")
 
 with col3:
-    market_sel = st.selectbox("PRODUCT MARKET", markets)
+    market_sel = render_checkbox_filter("PRODUCT MARKET", markets, "market")
 
 with col4:
-    product_dr_sel = st.selectbox("PRODUCT DR", product_drs)
+    product_dr_sel = render_checkbox_filter("PRODUCT DR", product_drs, "productdr")
 
 
 df_filtrado = df.copy()
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "BRAND", brand_sel)
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
 
+# padronização antes dos filtros textuais
 df_filtrado["SITE"] = df_filtrado["SITE"].astype(str).str.strip().str.upper()
 df_filtrado["Product DR"] = df_filtrado["Product DR"].astype(str).str.strip().str.upper()
+df_filtrado["BRAND"] = df_filtrado["BRAND"].astype(str).str.strip()
+df_filtrado["PRODUCT MARKET"] = df_filtrado["PRODUCT MARKET"].astype(str).str.strip()
 
-df_filtrado = aplicar_filtro_opcional(df_filtrado, "Product DR", product_dr_sel)
+# aplica filtros múltiplos
+df_filtrado = aplicar_filtro_multiplos(df_filtrado, "ANO", ano_sel)
+df_filtrado = aplicar_filtro_multiplos(df_filtrado, "BRAND", brand_sel)
+df_filtrado = aplicar_filtro_multiplos(df_filtrado, "PRODUCT MARKET", market_sel)
+df_filtrado = aplicar_filtro_multiplos(df_filtrado, "Product DR", product_dr_sel)
 
+# regras de exclusão
 df_filtrado = df_filtrado[
     ~(
         (df_filtrado["Product DR"] == "PC") |
@@ -203,7 +226,6 @@ df_filtrado = df_filtrado[
         )
     )
 ]
-
 
 
 # =========================
@@ -244,21 +266,19 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 # =========================
 # Gráficos por filial
 # =========================
-
-
 st.divider()
 st.subheader("📈 Gráficos por filial")
-st.caption("Cada gráfico mostra os volumes por ciclo e produto. Ciclos sem volume não são exibidos.")
+st.caption("Cada gráfico mostra os volumes por ciclo e produto.")
 
 # mesma cor para o mesmo Product DR em qualquer filial
 cores_produtos = {
     "DF": "#1F77B4",      # azul forte
-    "MOM": "#6DC8A0",     # vermelho forte
-    "RIG": "#6F4C9B",     # verde forte
-    "TA": "#D62728",      # roxo forte
-    "PU": "#2CA02C",      # ciano forte
-    "CO": "#FF7F0E",      # laranja forte
-    "CO PKD": "#8C564B"   # marrom forte
+    "MOM": "#6DC8A0",     # verde água
+    "RIG": "#6F4C9B",     # roxo
+    "TA": "#D62728",      # vermelho
+    "PU": "#2CA02C",      # verde
+    "CO": "#FF7F0E",      # laranja
+    "CO PKD": "#8C564B"   # marrom
 }
 
 sites_unicos = sorted(tabela["SITE"].dropna().unique().tolist())
@@ -278,14 +298,11 @@ else:
                 # linhas = ciclos / colunas = Product DR
                 df_plot = df_site.set_index("Product DR")[ORDEM_CICLOS].T
 
-                # remove ciclos sem volume total
-               
-
                 if df_plot.empty:
                     st.info(f"{site}: sem volume para exibir.")
                     continue
 
-                # ordem fixa dos produtos (mantém consistência visual)
+                # ordem fixa dos produtos
                 ordem_fixa_produtos = ["DF", "MOM", "RIG", "TA", "PU", "CO", "CO PKD"]
                 produtos_existentes = [p for p in ordem_fixa_produtos if p in df_plot.columns]
                 outros_produtos = [p for p in df_plot.columns if p not in produtos_existentes]
@@ -332,14 +349,12 @@ else:
                         showgrid=False,
                         tickangle=0
                     ),
-                    
                     yaxis=dict(
                         title=dict(text="", font=dict(color="black", size=12)),
                         tickfont=dict(color="black", size=11),
                         showticklabels=False,
                         showgrid=False,
                         zeroline=False
-
                     ),
                     legend=dict(
                         title=dict(text="Product DR", font=dict(color="black", size=11)),
@@ -358,18 +373,16 @@ else:
                 st.plotly_chart(fig, use_container_width=True)
 
 
-
 # =========================
 # Download
 # =========================
-
 st.divider()
 st.subheader("Download da tabela")
 
 with st.popover("📥 Baixar dados"):
     st.write("Escolha o formato:")
 
-    # Excel (ok gerar antes)
+    # Excel
     excel_file = gerar_excel(tabela)
     st.download_button(
         label="📗 Excel",
@@ -379,7 +392,7 @@ with st.popover("📥 Baixar dados"):
         use_container_width=True
     )
 
-    # PDF (geração lazy – só quando clicar)
+    # PDF
     st.download_button(
         label="📕 PDF",
         data=gerar_pdf(tabela),
@@ -400,3 +413,4 @@ with col_a:
 with col_b:
     soma_geral = tabela[ORDEM_CICLOS].sum().sum()
     st.metric("Soma geral", f"{soma_geral:,.0f}".replace(",", "."))
+
