@@ -1,8 +1,16 @@
+
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 
+import io
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
+
+# =========================
+# Configuração da página
+# =========================
 st.set_page_config(
     page_title="Visão de Volumes",
     layout="wide"
@@ -10,7 +18,7 @@ st.set_page_config(
 
 st.title("📊 Visão de Volumes por Site e Product DR")
 
-# Ordem visual das colunas conforme o layout desejado
+# Ordem visual das colunas
 ORDEM_CICLOS = [
     "0+0 Bgt", "0+12", "01+11", "02+10", "03+09", "04+08",
     "05+07", "06+06", "07+05", "08+04", "09+03", "10+02", "11+01", "12+0"
@@ -20,6 +28,9 @@ ARQUIVO_EXCEL = "dados/base_volume_sites.xlsx"
 ABA = "base"
 
 
+# =========================
+# Funções
+# =========================
 @st.cache_data
 def carregar_dados():
     df = pd.read_excel(
@@ -28,10 +39,8 @@ def carregar_dados():
         engine="openpyxl"
     )
 
-    # Limpeza dos nomes das colunas
     df.columns = df.columns.astype(str).str.strip()
 
-    # Colunas de texto que vamos tratar
     colunas_texto = [
         "Tipo Base",
         "Nº CICLO",
@@ -45,11 +54,9 @@ def carregar_dados():
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip()
 
-    # Normalização da coluna Tipo Base
     if "Tipo Base" in df.columns:
         df["Tipo Base"] = df["Tipo Base"].str.upper()
 
-    # Normalização leve da coluna Nº CICLO
     if "Nº CICLO" in df.columns:
         df["Nº CICLO"] = df["Nº CICLO"].replace({
             "0+0 BGT": "0+0 Bgt",
@@ -57,7 +64,6 @@ def carregar_dados():
             "0+0 Bgt ": "0+0 Bgt"
         })
 
-    # Garantir coluna numérica
     if "Total" in df.columns:
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
 
@@ -70,15 +76,60 @@ def aplicar_filtro_opcional(df, coluna, valor):
     return df[df[coluna] == valor]
 
 
+# ===== Exportação =====
+def gerar_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Tabela")
+    output.seek(0)
+    return output
+
+
+def gerar_pdf(df):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    c.setFont("Helvetica", 8)
+    x_start = 30
+    y = height - 40
+
+    # Cabeçalho
+    x = x_start
+    for col in df.columns:
+        c.drawString(x, y, str(col))
+        x += 50
+
+    y -= 15
+
+    # Linhas
+    for _, row in df.iterrows():
+        x = x_start
+        for value in row:
+            c.drawString(x, y, str(value))
+            x += 50
+        y -= 12
+
+        if y < 40:
+            c.showPage()
+            c.setFont("Helvetica", 8)
+            y = height - 40
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+# =========================
+# Carga de dados
+# =========================
 try:
     df = carregar_dados()
 except Exception as e:
     st.error(f"Erro ao carregar o arquivo Excel: {e}")
     st.stop()
 
-# =========================
-# Validação mínima
-# =========================
+
 colunas_necessarias = [
     "Tipo Base", "ANO", "BRAND", "PRODUCT MARKET",
     "SITE", "Product DR", "Nº CICLO", "Total"
@@ -89,10 +140,12 @@ if colunas_faltantes:
     st.error(f"Colunas obrigatórias não encontradas: {', '.join(colunas_faltantes)}")
     st.stop()
 
+
 # =========================
 # Filtro fixo
 # =========================
 df = df[df["Tipo Base"] == "F_RESPONSE"].copy()
+
 
 # =========================
 # Filtros da tela
@@ -120,13 +173,9 @@ df_filtrado = aplicar_filtro_opcional(df_filtrado, "ANO", ano_sel)
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "BRAND", brand_sel)
 df_filtrado = aplicar_filtro_opcional(df_filtrado, "PRODUCT MARKET", market_sel)
 
-# Padronização para evitar problema com espaço/maiúsculas
 df_filtrado["SITE"] = df_filtrado["SITE"].astype(str).str.strip().str.upper()
 df_filtrado["Product DR"] = df_filtrado["Product DR"].astype(str).str.strip().str.upper()
 
-# Regras de exclusão:
-# 1) remover PC de qualquer filial
-# 2) remover CO somente de GENERAL RODRIGUEZ
 df_filtrado = df_filtrado[
     ~(
         (df_filtrado["Product DR"] == "PC") |
@@ -139,10 +188,7 @@ df_filtrado = df_filtrado[
 
 
 # =========================
-# Montagem da tabela
-# Linhas: SITE + Product DR
-# Colunas: Nº CICLO
-# Valor: Total
+# Pivot da tabela
 # =========================
 if df_filtrado.empty:
     st.warning("Nenhum dado encontrado para os filtros selecionados.")
@@ -160,29 +206,52 @@ tabela = (
     .reset_index()
 )
 
-# Adiciona colunas faltantes para manter o layout fixo
 for ciclo in ORDEM_CICLOS:
     if ciclo not in tabela.columns:
         tabela[ciclo] = 0
 
-# Reordena as colunas no padrão visual da imagem
 tabela = tabela[["SITE", "Product DR"] + ORDEM_CICLOS]
-
-# Ordenação das linhas
 tabela = tabela.sort_values(["SITE", "Product DR"]).reset_index(drop=True)
 
 
-
-
+# =========================
+# Exibição
+# =========================
 st.subheader("Tabela consolidada")
 st.caption("Valor exibido: soma da coluna Total")
 st.dataframe(tabela, use_container_width=True, hide_index=True)
 
 
+# =========================
+# Download
+# =========================
+st.divider()
+st.subheader("Download da tabela")
+
+if st.button("📥 Baixar dados"):
+    col_xls, col_pdf = st.columns(2)
+
+    with col_xls:
+        excel_file = gerar_excel(tabela)
+        st.download_button(
+            label="📗 Baixar Excel",
+            data=excel_file,
+            file_name="visao_volumes.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    with col_pdf:
+        pdf_file = gerar_pdf(tabela)
+        st.download_button(
+            label="📕 Baixar PDF",
+            data=pdf_file,
+            file_name="visao_volumes.pdf",
+            mime="application/pdf"
+        )
 
 
 # =========================
-# Resumo rápido
+# Resumo
 # =========================
 col_a, col_b = st.columns(2)
 
