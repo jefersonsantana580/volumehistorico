@@ -228,26 +228,28 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 st.divider()
 st.subheader("Download da tabela")
 
-if st.button("📥 Baixar dados"):
-    col_xls, col_pdf = st.columns(2)
 
-    with col_xls:
-        excel_file = gerar_excel(tabela)
-        st.download_button(
-            label="📗 Baixar Excel",
-            data=excel_file,
-            file_name="visao_volumes.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+with st.popover("📥 Baixar dados"):
+    st.write("Escolha o formato:")
 
-    with col_pdf:
-        pdf_file = gerar_pdf(tabela)
-        st.download_button(
-            label="📕 Baixar PDF",
-            data=pdf_file,
-            file_name="visao_volumes.pdf",
-            mime="application/pdf"
-        )
+    excel_file = gerar_excel(tabela)
+    st.download_button(
+        label="📗 Excel",
+        data=excel_file,
+        file_name="visao_volumes.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+
+    pdf_file = gerar_pdf(tabela)
+    st.download_button(
+        label="📕 PDF",
+        data=pdf_file,
+        file_name="visao_volumes.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
+
 
 
 # =========================
