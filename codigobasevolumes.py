@@ -5,7 +5,12 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 
 import io
 from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+
 
 
 # =========================
@@ -241,14 +246,52 @@ with st.popover("📥 Baixar dados"):
         use_container_width=True
     )
 
-    pdf_file = gerar_pdf(tabela)
-    st.download_button(
-        label="📕 PDF",
-        data=pdf_file,
-        file_name="visao_volumes.pdf",
-        mime="application/pdf",
-        use_container_width=True
+def gerar_pdf(df):
+    buffer = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=20,
+        leftMargin=20,
+        topMargin=30,
+        bottomMargin=20
     )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Título
+    titulo = Paragraph(
+        "<b>Visão de Volumes por Site e Product DR</b>",
+        styles["Title"]
+    )
+    elements.append(titulo)
+    elements.append(Paragraph("<br/>", styles["Normal"]))
+
+    # Dados da tabela
+    data = [df.columns.tolist()] + df.values.tolist()
+
+    tabela = Table(data, repeatRows=1)
+
+    tabela.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 7),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+
+    elements.append(tabela)
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    return buffer
+
+    
 
 
 
