@@ -226,19 +226,20 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 # =========================
 # Gráficos por filial
 # =========================
+
 st.divider()
 st.subheader("📈 Gráficos por filial")
 st.caption("Cada gráfico mostra os volumes por ciclo e produto. Ciclos sem volume não são exibidos.")
 
-# cores fixas por Product DR
+# cores mais fortes
 cores_produtos = {
-    "DF": "#4F81BD",      # azul
-    "MOM": "#C0504D",     # vermelho
-    "RIG": "#9BBB59",     # verde
-    "TA": "#8064A2",      # roxo
-    "PU": "#4BACC6",      # azul claro
-    "CO": "#F79646",      # laranja
-    "CO PKD": "#7F7F7F"   # cinza
+    "DF": "#1F77B4",      # azul forte
+    "MOM": "#D62728",     # vermelho forte
+    "RIG": "#2CA02C",     # verde forte
+    "TA": "#9467BD",      # roxo forte
+    "PU": "#17BECF",      # ciano forte
+    "CO": "#FF7F0E",      # laranja forte
+    "CO PKD": "#8C564B"   # marrom forte
 }
 
 # lista de filiais da tabela consolidada
@@ -247,73 +248,95 @@ sites_unicos = sorted(tabela["SITE"].dropna().unique().tolist())
 if not sites_unicos:
     st.info("Nenhuma filial encontrada para exibir gráficos.")
 else:
-    # limita a 5 gráficos (1 por filial)
-    for site in sites_unicos[:5]:
-        df_site = tabela[tabela["SITE"] == site].copy()
+    # até 5 gráficos (1 por filial)
+    sites_graficos = sites_unicos[:5]
 
-        # linhas = ciclos / colunas = Product DR
-        df_plot = df_site.set_index("Product DR")[ORDEM_CICLOS].T
+    # organiza 2 gráficos por linha
+    for i in range(0, len(sites_graficos), 2):
+        cols = st.columns(2)
 
-        # remove ciclos que não têm volume na filial
-        df_plot = df_plot.loc[df_plot.sum(axis=1) > 0]
+        for j, site in enumerate(sites_graficos[i:i+2]):
+            with cols[j]:
+                df_site = tabela[tabela["SITE"] == site].copy()
 
-        if df_plot.empty:
-            continue
+                # linhas = ciclos / colunas = Product DR
+                df_plot = df_site.set_index("Product DR")[ORDEM_CICLOS].T
 
-        # ordena os produtos pelo total para melhor leitura
-        ordem_produtos = df_plot.sum(axis=0).sort_values(ascending=False).index.tolist()
-        df_plot = df_plot[ordem_produtos]
+                # remove ciclos sem volume total
+                df_plot = df_plot.loc[df_plot.sum(axis=1) > 0]
 
-        fig, ax = plt.subplots(figsize=(12, 5))
+                if df_plot.empty:
+                    st.info(f"{site}: sem volume para exibir.")
+                    continue
 
-        bottom = None
+                # ordena os produtos pelo total (maior embaixo da pilha)
+                ordem_produtos = df_plot.sum(axis=0).sort_values(ascending=False).index.tolist()
+                df_plot = df_plot[ordem_produtos]
 
-        for i, produto in enumerate(df_plot.columns):
-            valores = df_plot[produto]
-            cor = cores_produtos.get(produto, None)
+                fig, ax = plt.subplots(figsize=(10, 4.8))
 
-            if i == 0:
-                ax.bar(
-                    df_plot.index,
-                    valores,
-                    label=f"{site} - {produto}",
-                    color=cor
+                # base da pilha
+                bottom = pd.Series(0, index=df_plot.index, dtype=float)
+
+                for produto in df_plot.columns:
+                    valores = df_plot[produto].fillna(0)
+                    cor = cores_produtos.get(produto, "#999999")
+
+                    ax.bar(
+                        df_plot.index,
+                        valores,
+                        bottom=bottom,
+                        label=produto,
+                        color=cor,
+                        edgecolor="white",
+                        linewidth=0.7
+                    )
+
+                    bottom = bottom + valores
+
+                # total no topo da pilha
+                totais = df_plot.sum(axis=1)
+                offset = max(totais) * 0.015 if max(totais) > 0 else 1
+
+                for x, total in enumerate(totais):
+                    if total > 0:
+                        ax.text(
+                            x,
+                            total + offset,
+                            f"{int(total):,}".replace(",", "."),
+                            ha="center",
+                            va="bottom",
+                            fontsize=9,
+                            fontweight="bold",
+                            color="black"
+                        )
+
+                ax.set_title(f"{site}", fontsize=12, fontweight="bold")
+                ax.set_xlabel("Nº CICLO")
+                ax.set_ylabel("Volume")
+                ax.tick_params(axis="x", rotation=0)
+
+                # grade leve
+                ax.grid(axis="y", linestyle="--", alpha=0.25)
+
+                # remove bordas desnecessárias
+                ax.spines["top"].set_visible(False)
+                ax.spines["right"].set_visible(False)
+
+                # legenda mais limpa
+                ax.legend(
+                    title="Product DR",
+                    loc="upper left",
+                    bbox_to_anchor=(1.01, 1),
+                    frameon=False,
+                    fontsize=9,
+                    title_fontsize=9
                 )
-                bottom = valores.copy()
-            else:
-                ax.bar(
-                    df_plot.index,
-                    valores,
-                    bottom=bottom,
-                    label=f"{site} - {produto}",
-                    color=cor
-                )
-                bottom = bottom + valores
 
-        ax.set_title(f"{site} - Volume por ciclo e produto", fontsize=12)
-        ax.set_xlabel("Nº CICLO")
-        ax.set_ylabel("Volume")
-        ax.tick_params(axis="x", rotation=0)
+                plt.tight_layout()
+                st.pyplot(fig, use_container_width=True)
+                plt.close(fig)
 
-        # legenda à direita
-        ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1))
-
-        # rótulos dentro das barras
-        for cont in ax.containers:
-            labels = [
-                f"{int(v):,}".replace(",", ".") if v > 0 else ""
-                for v in cont.datavalues
-            ]
-            ax.bar_label(
-                cont,
-                labels=labels,
-                label_type="center",
-                fontsize=8,
-                color="white"
-            )
-
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
 
 
 # =========================
