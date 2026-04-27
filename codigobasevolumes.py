@@ -230,13 +230,14 @@ st.dataframe(tabela, use_container_width=True, hide_index=True)
 # =========================
 # Download
 # =========================
+
 st.divider()
 st.subheader("Download da tabela")
-
 
 with st.popover("📥 Baixar dados"):
     st.write("Escolha o formato:")
 
+    # Excel (ok gerar antes)
     excel_file = gerar_excel(tabela)
     st.download_button(
         label="📗 Excel",
@@ -246,52 +247,15 @@ with st.popover("📥 Baixar dados"):
         use_container_width=True
     )
 
-def gerar_pdf(df):
-    buffer = io.BytesIO()
-
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        rightMargin=20,
-        leftMargin=20,
-        topMargin=30,
-        bottomMargin=20
+    # PDF (geração lazy – só quando clicar)
+    st.download_button(
+        label="📕 PDF",
+        data=gerar_pdf(tabela),
+        file_name="visao_volumes.pdf",
+        mime="application/pdf",
+        use_container_width=True
     )
-
-    elements = []
-    styles = getSampleStyleSheet()
-
-    # Título
-    titulo = Paragraph(
-        "<b>Visão de Volumes por Site e Product DR</b>",
-        styles["Title"]
-    )
-    elements.append(titulo)
-    elements.append(Paragraph("<br/>", styles["Normal"]))
-
-    # Dados da tabela
-    data = [df.columns.tolist()] + df.values.tolist()
-
-    tabela = Table(data, repeatRows=1)
-
-    tabela.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 7),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-    ]))
-
-    elements.append(tabela)
-
-    doc.build(elements)
-    buffer.seek(0)
-
-    return buffer
-
-    
+   
 
 
 
